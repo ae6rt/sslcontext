@@ -7,7 +7,7 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * Super simple key manager.
+ * Super simple key manager.  This class drives which key you present for use for SSL client auth.
  */
 public class CustomKeyManager implements X509KeyManager {
     private final String alias;
