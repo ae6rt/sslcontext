@@ -20,24 +20,34 @@ public class CustomSSLContextBag {
     private Logger logger = Logger.getLogger(CustomSSLContextBag.class.getName());
 
     private File keyStoreFile;
+    private File trustStoreFile = null;
     private String alias;
     private String storepass;
     private String keypass;
     private SSLContext context;
     private X509KeyManager keyManager;
-    private KeyStore trustStore = null;
 
     public CustomSSLContextBag() {
     }
 
     public void init() {
         try {
+            // The key store and trust store are JKS keystores assumed to have the same storepass.  If you control both files, this
+            // is a burdensome requirement.
             KeyStore clientStore = KeyStore.getInstance("JKS");
+            KeyStore trustStore = null;
 
             InputStream is = null;
             try {
                 is = new FileInputStream(keyStoreFile);
                 clientStore.load(is, storepass.toCharArray());
+
+                // init an optional keystore containing trust material (certs)
+                if (trustStoreFile != null) {
+                    trustStore = KeyStore.getInstance("JKS");
+                    is = new FileInputStream(trustStoreFile);
+                    trustStore.load(is, storepass.toCharArray());
+                }
             } catch (CertificateException ex) {
                 logger.log(Level.SEVERE, null, ex);
             } catch (IOException e) {
@@ -122,11 +132,11 @@ public class CustomSSLContextBag {
         this.keyManager = keyManager;
     }
 
-    public KeyStore getTrustStore() {
-        return trustStore;
+    public File getTrustStoreFile() {
+        return trustStoreFile;
     }
 
-    public void setTrustStore(KeyStore trustStore) {
-        this.trustStore = trustStore;
+    public void setTrustStoreFile(File trustStoreFile) {
+        this.trustStoreFile = trustStoreFile;
     }
 }
