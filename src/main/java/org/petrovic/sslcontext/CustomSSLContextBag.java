@@ -58,7 +58,7 @@ public class CustomSSLContextBag {
 
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
             // use cacerts truststore bits by default
-            // but you should be able to use a non-null value to teach the context about remote certs not in cacerts
+            // but you should be able to use a non-null value to inform the context about server certs not in cacerts
             tmf.init(trustStore);
 
             java.security.cert.Certificate[] _certChain = clientStore.getCertificateChain(alias);
