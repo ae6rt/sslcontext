@@ -33,7 +33,7 @@ public class CustomSSLContextBag {
     public void init() {
         try {
             // The key store and trust store are JKS keystores assumed to have the same storepass.  If you control both files, this
-            // is a burdensome requirement.
+            // is not a burdensome requirement.
             KeyStore clientStore = KeyStore.getInstance("JKS");
             KeyStore trustStore = null;
 
