@@ -2,22 +2,42 @@ package org.petrovic.sslcontext;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
+import java.util.*;
 
 /**
  * Super simple key manager.  This class drives which key you present for use for SSL client auth.
  */
 public class CustomKeyManager implements X509KeyManager {
-    private final String alias;
-    private final PrivateKey key;
-    private final X509Certificate[] certs;
 
-    public CustomKeyManager(String alias, PrivateKey key, X509Certificate[] certChain) {
-        this.alias = alias;
-        this.key = key;
-        this.certs = certChain;
+    public final List<String> aList = new ArrayList<String>();
+    public final Map<String, PrivateKey> privateKeyMap = new HashMap<String, PrivateKey>();
+    public final Map<String, X509Certificate[]> certMap = new HashMap<String, X509Certificate[]>();
+
+    public CustomKeyManager(KeyStore keystore, String keypass) {
+        try {
+            Enumeration<String> aliases = keystore.aliases();
+            while (aliases.hasMoreElements()) {
+                aList.add(aliases.nextElement());
+            }
+            for (String s : aList) {
+                java.security.cert.Certificate[] _certChain = keystore.getCertificateChain(s);
+                X509Certificate[] certChain = new X509Certificate[_certChain.length];
+                for (int i = 0; i < _certChain.length; ++i) {
+                    certChain[i] = (X509Certificate) _certChain[i];
+                }
+                certMap.put(s, certChain);
+                PrivateKey key = (PrivateKey) keystore.getKey(s, keypass.toCharArray());
+                privateKeyMap.put(s, key);
+            }
+        } catch (KeyStoreException e) {
+            e.printStackTrace();
+        } catch (UnrecoverableKeyException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -31,8 +51,8 @@ public class CustomKeyManager implements X509KeyManager {
     @Override
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket) {
         // Choosing the alias could be more elaborate, and would be based on the method arguments.  For now,
-        // just return alias itself.
-        return alias;
+        // just return the first alias itself.
+        return aList.get(0);
     }
 
     /**
@@ -44,7 +64,7 @@ public class CustomKeyManager implements X509KeyManager {
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
         // You could choose the cert chain based on the alias, but for now just return the one chain we know about.
-        return certs;
+        return certMap.get(alias);
     }
 
     /**
@@ -56,7 +76,7 @@ public class CustomKeyManager implements X509KeyManager {
     @Override
     public PrivateKey getPrivateKey(String alias) {
         // You could choose the key based on the alias, but for now just return the one key we know about.
-        return key;
+        return privateKeyMap.get(alias);
     }
 
     /**

@@ -10,9 +10,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.*;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -21,7 +23,7 @@ public class CustomSSLContextBag {
 
     private File keyStoreFile;
     private File trustStoreFile = null;
-    private String alias;
+    //    private String alias;
     private String storepass;
     private String keypass;
     private SSLContext context;
@@ -61,24 +63,11 @@ public class CustomSSLContextBag {
             // but you should be able to use a non-null value to inform the context about server certs not in cacerts
             tmf.init(trustStore);
 
-            java.security.cert.Certificate[] _certChain = clientStore.getCertificateChain(alias);
-            X509Certificate[] certChain = new X509Certificate[_certChain.length];
-            for (int i = 0; i < _certChain.length; ++i) {
-                certChain[i] = (X509Certificate) _certChain[i];
-            }
-
-            PrivateKey key = (PrivateKey) clientStore.getKey(alias, keypass.toCharArray());
-            keyManager = new CustomKeyManager(alias, key, certChain);
+            keyManager = new CustomKeyManager(clientStore, storepass);
             KeyManager[] keyManagers = {keyManager};
 
             context = SSLContext.getInstance("TLS");
             getContext().init(keyManagers, tmf.getTrustManagers(), null);
-
-            if (logger.isLoggable(Level.FINE)) {
-                logger.fine(String.format("Client cert for %s: %s", keyStoreFile, clientStore.getCertificate(alias)));
-            }
-        } catch (UnrecoverableKeyException ex) {
-            logger.log(Level.SEVERE, null, ex);
         } catch (KeyManagementException ex) {
             logger.log(Level.SEVERE, null, ex);
         } catch (KeyStoreException ex) {
@@ -94,14 +83,6 @@ public class CustomSSLContextBag {
 
     public void setKeyStoreFile(File keyStoreFile) {
         this.keyStoreFile = keyStoreFile;
-    }
-
-    public String getAlias() {
-        return alias;
-    }
-
-    public void setAlias(String alias) {
-        this.alias = alias;
     }
 
     public String getStorepass() {
