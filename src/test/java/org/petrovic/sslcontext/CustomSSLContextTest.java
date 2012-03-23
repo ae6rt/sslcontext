@@ -24,6 +24,7 @@ public class CustomSSLContextTest {
 
     public static final String STOREPASS = "changeit";
     public static final String MYALIAS = "myalias";
+    public static final String KEYSTORE = "keystore.jks";
 
     @Before
     public void setUp() throws Exception {
@@ -36,27 +37,36 @@ public class CustomSSLContextTest {
     }
 
     @Test
-    public void testContext() {
+    public void testContext() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore keyStore = keyStoreFromFile(new File(KEYSTORE), STOREPASS);
+
+        CustomKeyManager customKeyManager = new CustomKeyManager();
+        customKeyManager.setKeyStore(keyStore);
+        customKeyManager.setKeypass(STOREPASS);
+        customKeyManager.init();
+
         CustomSSLContextBag customSSLContextBag = new CustomSSLContextBag();
-        customSSLContextBag.setStorepass(STOREPASS);
-        customSSLContextBag.setKeypass(STOREPASS);
-        customSSLContextBag.setKeyStoreFile(new File("keystore.jks"));
+        customSSLContextBag.setKeyManager(customKeyManager);
         customSSLContextBag.init();
 
         // Pass this context to the underlying HTTP client in whatever way that client API provides.
-        // I can imagine cases where it would want the underlying SSLSocketFactory, too.  YMMV
         SSLContext context = customSSLContextBag.getContext();
         assertNotNull(context);
+
+        // I can imagine cases where it would want the underlying SSLSocketFactory, too.  YMMV
         SSLSocketFactory socketFactory = context.getSocketFactory();
         assertNotNull(socketFactory);
     }
 
     @Test
     public void testKeyManager() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        KeyStore keyStore = KeyStore.getInstance("JKS");
-        InputStream is = new FileInputStream("keystore.jks");
-        keyStore.load(is, STOREPASS.toCharArray());
-        CustomKeyManager customKeyManager = new CustomKeyManager(keyStore, STOREPASS);
+        KeyStore keyStore = keyStoreFromFile(new File(KEYSTORE), STOREPASS);
+
+        CustomKeyManager customKeyManager = new CustomKeyManager();
+        customKeyManager.setKeyStore(keyStore);
+        customKeyManager.setKeypass(STOREPASS);
+        customKeyManager.init();
+
         assertEquals(MYALIAS, customKeyManager.aList.get(0));
 
         X509Certificate[] x509Certificates = customKeyManager.certMap.get(MYALIAS);
@@ -67,6 +77,13 @@ public class CustomSSLContextTest {
 
         PrivateKey privateKey = customKeyManager.privateKeyMap.get(MYALIAS);
         assertNotNull(privateKey);
+    }
+
+    private KeyStore keyStoreFromFile(File keyStoreFile, String storepass) throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore keyStore = KeyStore.getInstance("JKS");
+        InputStream is = new FileInputStream(keyStoreFile);
+        keyStore.load(is, storepass.toCharArray());
+        return keyStore;
     }
 }
 
