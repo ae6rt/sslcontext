@@ -4,7 +4,6 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.X509KeyManager;
-import java.io.File;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -15,7 +14,6 @@ import java.util.logging.Logger;
 public class CustomSSLContextBag {
     private Logger logger = Logger.getLogger(CustomSSLContextBag.class.getName());
 
-    private File trustStoreFile = null;
     private SSLContext context;
     private X509KeyManager keyManager;
     private KeyStore trustStore = null;
