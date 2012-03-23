@@ -9,12 +9,16 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 
-public class CustomSSLContextBag {
+/**
+ * Bag for an SSLContext.
+ * Reference:  http://www.amazon.com/Beginning-Cryptography-Java-David-Hook/dp/0764596330
+ */
+public class SSLContextBag {
     private SSLContext context;
-    private X509KeyManager keyManager;
+    private X509KeyManager keyManager = null;
     private KeyStore trustStore = null;
 
-    public CustomSSLContextBag() {
+    public SSLContextBag() {
     }
 
     public void init() {

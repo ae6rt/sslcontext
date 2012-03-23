@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 /**
  * @author petrovic -- 3/22/12 11:19 AM
  */
-public class CustomSSLContextTest {
+public class SSLContextTest {
 
     public static final String STOREPASS = "changeit";
     public static final String MYALIAS = "myalias";
@@ -32,15 +32,15 @@ public class CustomSSLContextTest {
     public static final String TRUSTSTORE = "truststore.jks";
     public static final String HTTPS = "https";
 
-    private CustomKeyManager customKeyManager;
+    private KeyManagerImpl keyManagerImpl;
 
     @Before
     public void setUp() throws Exception {
         KeyStore keyStore = keyStoreFromFile(new File(KEYSTORE), STOREPASS);
-        customKeyManager = new CustomKeyManager();
-        customKeyManager.setKeyStore(keyStore);
-        customKeyManager.setKeypass(STOREPASS);
-        customKeyManager.init();
+        keyManagerImpl = new KeyManagerImpl();
+        keyManagerImpl.setKeyStore(keyStore);
+        keyManagerImpl.setKeypass(STOREPASS);
+        keyManagerImpl.init();
     }
 
     @After
@@ -64,27 +64,27 @@ public class CustomSSLContextTest {
 
     @Test
     public void testKeyManager() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        assertEquals(MYALIAS, customKeyManager.aList.get(0));
+        assertEquals(MYALIAS, keyManagerImpl.aList.get(0));
 
-        X509Certificate[] x509Certificates = customKeyManager.certMap.get(MYALIAS);
+        X509Certificate[] x509Certificates = keyManagerImpl.certMap.get(MYALIAS);
         assertEquals(1, x509Certificates.length);
         X509Certificate x509Certificate = x509Certificates[0];
         Principal subjectDN = x509Certificate.getSubjectDN();
         System.out.println("client subjectDN: " + subjectDN);
 
-        PrivateKey privateKey = customKeyManager.privateKeyMap.get(MYALIAS);
+        PrivateKey privateKey = keyManagerImpl.privateKeyMap.get(MYALIAS);
         assertNotNull(privateKey);
     }
 
     @Test
     public void testContext() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        CustomSSLContextBag customSSLContextBag = new CustomSSLContextBag();
-        customSSLContextBag.setKeyManager(customKeyManager);
-        customSSLContextBag.setTrustStore(null);
-        customSSLContextBag.init();
+        SSLContextBag SSLContextBag = new SSLContextBag();
+        SSLContextBag.setKeyManager(keyManagerImpl);
+        SSLContextBag.setTrustStore(null);
+        SSLContextBag.init();
 
         // Pass this context to the underlying HTTP client in whatever way that client API provides.
-        SSLContext context = customSSLContextBag.getContext();
+        SSLContext context = SSLContextBag.getContext();
         assertNotNull(context);
 
         // I can imagine cases where it would want the underlying SSLSocketFactory, too.  YMMV
@@ -95,7 +95,7 @@ public class CustomSSLContextTest {
 
     @Test
     public void testCommonsClient() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-        CustomSSLContextBag contextBag = new CustomSSLContextBag();
+        SSLContextBag contextBag = new SSLContextBag();
         contextBag.setTrustStore(keyStoreFromFile(new File(TRUSTSTORE), STOREPASS)); // contains the new VeriSign cert
         contextBag.setKeyManager(null);  // don't need a keymanager bc server does not require client auth
         contextBag.init();

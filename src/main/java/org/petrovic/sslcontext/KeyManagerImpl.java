@@ -9,11 +9,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Super simple key manager.  This class drives which key you present for use for SSL client auth.
+ * Super simple key manager.  This class drives which key you present for use during SSL client auth.
  */
-public class CustomKeyManager implements X509KeyManager {
+public class KeyManagerImpl implements X509KeyManager {
 
-    private Logger logger = Logger.getLogger(CustomKeyManager.class.getName());
+    private Logger logger = Logger.getLogger(KeyManagerImpl.class.getName());
 
     public final List<String> aList = new ArrayList<String>();
     public final Map<String, PrivateKey> privateKeyMap = new HashMap<String, PrivateKey>();
@@ -22,7 +22,7 @@ public class CustomKeyManager implements X509KeyManager {
     private KeyStore keyStore;
     private String keypass;
 
-    public CustomKeyManager() {
+    public KeyManagerImpl() {
     }
 
     public void init() {
@@ -129,16 +129,8 @@ public class CustomKeyManager implements X509KeyManager {
         throw new UnsupportedOperationException("getServerAliases not implemented");
     }
 
-    public KeyStore getKeyStore() {
-        return keyStore;
-    }
-
     public void setKeyStore(KeyStore keyStore) {
         this.keyStore = keyStore;
-    }
-
-    public String getKeypass() {
-        return keypass;
     }
 
     public void setKeypass(String keypass) {
