@@ -8,12 +8,8 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class CustomSSLContextBag {
-    private Logger logger = Logger.getLogger(CustomSSLContextBag.class.getName());
-
     private SSLContext context;
     private X509KeyManager keyManager;
     private KeyStore trustStore = null;
@@ -31,11 +27,11 @@ public class CustomSSLContextBag {
             context = SSLContext.getInstance("TLS");
             context.init(keyManagers, tmf.getTrustManagers(), null);
         } catch (KeyManagementException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         } catch (KeyStoreException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         } catch (NoSuchAlgorithmException ex) {
-            logger.log(Level.SEVERE, null, ex);
+            throw new RuntimeException(ex);
         }
     }
 

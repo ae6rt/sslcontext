@@ -29,6 +29,8 @@ public class CustomSSLContextTest {
     public static final String STOREPASS = "changeit";
     public static final String MYALIAS = "myalias";
     public static final String KEYSTORE = "keystore.jks";
+    public static final String TRUSTSTORE = "truststore.jks";
+    public static final String HTTPS = "https";
 
     private CustomKeyManager customKeyManager;
 
@@ -43,12 +45,11 @@ public class CustomSSLContextTest {
 
     @After
     public void tearDown() throws Exception {
-
     }
 
     @Test
     public void testTrustStore() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
-        KeyStore trustStore = keyStoreFromFile(new File("truststore.jks"), STOREPASS);
+        KeyStore trustStore = keyStoreFromFile(new File(TRUSTSTORE), STOREPASS);
         Enumeration<String> aliases = trustStore.aliases();
         List<String> aList = new ArrayList<String>();
         while (aliases.hasMoreElements()) {
@@ -95,10 +96,10 @@ public class CustomSSLContextTest {
     @Test
     public void testCommonsClient() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
         CustomSSLContextBag contextBag = new CustomSSLContextBag();
-        contextBag.setTrustStore(keyStoreFromFile(new File("truststore.jks"), "changeit")); // contains the new VeriSign cert
+        contextBag.setTrustStore(keyStoreFromFile(new File(TRUSTSTORE), STOREPASS)); // contains the new VeriSign cert
         contextBag.setKeyManager(null);  // don't need a keymanager bc server does not require client auth
         contextBag.init();
-        Protocol.registerProtocol("https", new Protocol("https", new ApacheSSLSocketFactoryImpl(contextBag.getContext()), 443));
+        Protocol.registerProtocol(HTTPS, new Protocol(HTTPS, new ApacheSSLSocketFactoryImpl(contextBag.getContext()), 443));
 
         // doesn't test much, but it should run without exception
         assertTrue(true);
