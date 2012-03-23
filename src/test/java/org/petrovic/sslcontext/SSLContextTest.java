@@ -11,7 +11,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -26,13 +30,18 @@ import static org.junit.Assert.*;
  */
 public class SSLContextTest {
 
-    public static final String STOREPASS = "changeit";
-    public static final String MYALIAS = "myalias";
-    public static final String KEYSTORE = "keystore.jks";
-    public static final String TRUSTSTORE = "truststore.jks";
-    public static final String HTTPS = "https";
+    /*
+   The content of these keystores are not actually related.  Their respective contents are valid, but not correlated
+   in any real way.
+    */
+    private final String KEYSTORE = "keystore.jks";
+    private final String TRUSTSTORE = "truststore.jks";
 
+    private final String STOREPASS = "changeit";
+    private final String HTTPS = "https";
+    private final String MYALIAS = "myalias";
     private KeyManagerImpl keyManagerImpl;
+    private KeyStore trustStore;
 
     @Before
     public void setUp() throws Exception {
@@ -41,6 +50,8 @@ public class SSLContextTest {
         keyManagerImpl.setKeyStore(keyStore);
         keyManagerImpl.setKeypass(STOREPASS);
         keyManagerImpl.init();
+
+        trustStore = keyStoreFromFile(new File(TRUSTSTORE), STOREPASS);
     }
 
     @After
@@ -64,22 +75,41 @@ public class SSLContextTest {
 
     @Test
     public void testKeyManager() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        assertEquals(MYALIAS, keyManagerImpl.aList.get(0));
+        assertEquals(MYALIAS, keyManagerImpl.aliases.get(0));
 
-        X509Certificate[] x509Certificates = keyManagerImpl.certMap.get(MYALIAS);
+        X509Certificate[] x509Certificates = keyManagerImpl.certificateMap.get(MYALIAS);
         assertEquals(1, x509Certificates.length);
         X509Certificate x509Certificate = x509Certificates[0];
         Principal subjectDN = x509Certificate.getSubjectDN();
-        System.out.println("client subjectDN: " + subjectDN);
+        System.out.println("client subjectDN:  " + subjectDN);
 
         PrivateKey privateKey = keyManagerImpl.privateKeyMap.get(MYALIAS);
         assertNotNull(privateKey);
     }
 
     @Test
-    public void testContext() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+    public void testContextA() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
         SSLContextBag SSLContextBag = new SSLContextBag();
         SSLContextBag.setKeyManager(keyManagerImpl);
+        SSLContextBag.setTrustStore(trustStore);
+        SSLContextBag.init();
+
+        // Pass this context to the underlying HTTP client in whatever way that client API provides.
+        SSLContext context = SSLContextBag.getContext();
+        assertNotNull(context);
+
+        // I can imagine cases where it would want the underlying SSLSocketFactory, too.  YMMV
+        SSLSocketFactory socketFactory = context.getSocketFactory();
+        assertNotNull(socketFactory);
+    }
+
+    /*
+    This test should generate what is essentially the default SSLContext characterized by no special key manager or trust store.
+     */
+    @Test
+    public void testContextB() throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        SSLContextBag SSLContextBag = new SSLContextBag();
+        SSLContextBag.setKeyManager(null);
         SSLContextBag.setTrustStore(null);
         SSLContextBag.init();
 
@@ -93,11 +123,14 @@ public class SSLContextTest {
     }
 
 
+    /*
+    Verify that we can create an Apache HTTP Client custom protocol from out SSLContext.
+     */
     @Test
     public void testCommonsClient() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
         SSLContextBag contextBag = new SSLContextBag();
-        contextBag.setTrustStore(keyStoreFromFile(new File(TRUSTSTORE), STOREPASS)); // contains the new VeriSign cert
-        contextBag.setKeyManager(null);  // don't need a keymanager bc server does not require client auth
+        contextBag.setTrustStore(keyStoreFromFile(new File(TRUSTSTORE), STOREPASS));
+        contextBag.setKeyManager(keyManagerImpl);
         contextBag.init();
         Protocol.registerProtocol(HTTPS, new Protocol(HTTPS, new ApacheSSLSocketFactoryImpl(contextBag.getContext()), 443));
 

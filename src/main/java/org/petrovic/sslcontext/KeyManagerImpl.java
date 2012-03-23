@@ -2,9 +2,19 @@ package org.petrovic.sslcontext;
 
 import javax.net.ssl.X509KeyManager;
 import java.net.Socket;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -15,9 +25,9 @@ public class KeyManagerImpl implements X509KeyManager {
 
     private Logger logger = Logger.getLogger(KeyManagerImpl.class.getName());
 
-    public final List<String> aList = new ArrayList<String>();
-    public final Map<String, PrivateKey> privateKeyMap = new HashMap<String, PrivateKey>();
-    public final Map<String, X509Certificate[]> certMap = new HashMap<String, X509Certificate[]>();
+    public List<String> aliases;
+    public Map<String, PrivateKey> privateKeyMap;
+    public Map<String, X509Certificate[]> certificateMap;
 
     private KeyStore keyStore;
     private String keypass;
@@ -26,21 +36,27 @@ public class KeyManagerImpl implements X509KeyManager {
     }
 
     public void init() {
+        List<String> tList = new ArrayList<String>();
+        Map<String, PrivateKey> pMap = new HashMap<String, PrivateKey>();
+        Map<String, X509Certificate[]> cMap = new HashMap<String, X509Certificate[]>();
         try {
-            Enumeration<String> aliases = keyStore.aliases();
-            while (aliases.hasMoreElements()) {
-                aList.add(aliases.nextElement());
+            Enumeration<String> enumeration = keyStore.aliases();
+            while (enumeration.hasMoreElements()) {
+                tList.add(enumeration.nextElement());
             }
-            for (String s : aList) {
+            for (String s : tList) {
                 java.security.cert.Certificate[] _certChain = keyStore.getCertificateChain(s);
                 X509Certificate[] certChain = new X509Certificate[_certChain.length];
                 for (int i = 0; i < _certChain.length; ++i) {
                     certChain[i] = (X509Certificate) _certChain[i];
                 }
-                certMap.put(s, certChain);
+                cMap.put(s, certChain);
                 PrivateKey key = (PrivateKey) keyStore.getKey(s, keypass.toCharArray());
-                privateKeyMap.put(s, key);
+                pMap.put(s, key);
             }
+            aliases = Collections.unmodifiableList(tList);
+            privateKeyMap = Collections.unmodifiableMap(pMap);
+            certificateMap = Collections.unmodifiableMap(cMap);
         } catch (KeyStoreException e) {
             logger.log(Level.SEVERE, null, e);
         } catch (UnrecoverableKeyException e) {
@@ -62,7 +78,7 @@ public class KeyManagerImpl implements X509KeyManager {
     public String chooseClientAlias(String[] keyTypes, Principal[] issuers, Socket socket) {
         // Choosing the alias could be more elaborate, and would be based on the method arguments.  For now,
         // just return the first alias itself.
-        return aList.get(0);
+        return aliases.get(0);
     }
 
     /**
@@ -74,7 +90,7 @@ public class KeyManagerImpl implements X509KeyManager {
     @Override
     public X509Certificate[] getCertificateChain(String alias) {
         // You could choose the cert chain based on the alias, but for now just return the one chain we know about.
-        return certMap.get(alias);
+        return certificateMap.get(alias);
     }
 
     /**
