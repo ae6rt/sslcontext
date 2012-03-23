@@ -8,7 +8,7 @@
     <packaging>jar</packaging>
 
     <name>sslcontext</name>
-    <url>http://maven.apache.org</url>
+    <url>http://www.petrovic.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

@@ -9,6 +9,9 @@ import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.net.*;
 
+/**
+ * http://svn.apache.org/viewvc/httpcomponents/oac.hc3x/trunk/src/contrib/org/apache/commons/httpclient/contrib/ssl/EasySSLProtocolSocketFactory.java?revision=661391&view=co
+ */
 public class ApacheSSLSocketFactoryImpl implements SecureProtocolSocketFactory {
 
     private SSLContext context;
