@@ -14,6 +14,9 @@ import java.io.InputStream;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -40,6 +43,17 @@ public class CustomSSLContextTest {
     @After
     public void tearDown() throws Exception {
 
+    }
+
+    @Test
+    public void testTrustStore() throws IOException, NoSuchAlgorithmException, KeyStoreException, CertificateException {
+        KeyStore trustStore = keyStoreFromFile(new File("truststore.jks"), STOREPASS);
+        Enumeration<String> aliases = trustStore.aliases();
+        List<String> aList = new ArrayList<String>();
+        while (aliases.hasMoreElements()) {
+            aList.add(aliases.nextElement());
+        }
+        assertEquals(1, aList.size());
     }
 
     @Test
