@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -54,6 +55,10 @@ public class CustomSSLContextTest {
             aList.add(aliases.nextElement());
         }
         assertEquals(1, aList.size());
+        Certificate certificate = trustStore.getCertificate(aList.get(0));
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+        Principal subjectDN = x509Certificate.getSubjectDN();
+        System.out.println("trusted subjectDN: " + subjectDN);
     }
 
     @Test
@@ -64,7 +69,7 @@ public class CustomSSLContextTest {
         assertEquals(1, x509Certificates.length);
         X509Certificate x509Certificate = x509Certificates[0];
         Principal subjectDN = x509Certificate.getSubjectDN();
-        System.out.println("subjectDN: " + subjectDN);
+        System.out.println("client subjectDN: " + subjectDN);
 
         PrivateKey privateKey = customKeyManager.privateKeyMap.get(MYALIAS);
         assertNotNull(privateKey);
